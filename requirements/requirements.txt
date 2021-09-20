@@ -1,0 +1,16 @@
+opencv-python
+scikit-build
+matplotlib
+torch
+torchvision
+tensorboard
+vit-pytorch
+jupyterlab
+tqdm
+ipywidgets
+timm
+scipy
+pandas
+seaborn
+patool
+sklearn
