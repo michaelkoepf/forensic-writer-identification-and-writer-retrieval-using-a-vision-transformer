@@ -21,12 +21,12 @@ For details on the dataset splits/datasets, see `./dataset_splits/README.md`
 |-------|----------|
 | Top 1 | 97.4 |
 | *Soft top k* |  |
-| 2 | 98.0 |
+| 2 | 97.9 |
 | 3 | 98.2 |
 | 5 | 98.4 |
 | 10 | 98.7 |
 | *Hard top k* |  |
-| 2 | 96.5 |
+| 2 | 95.0 |
 | *mAP* | 92.8 |
 
 #### `ICDAR 2013`
@@ -39,8 +39,8 @@ For details on the dataset splits/datasets, see `./dataset_splits/README.md`
 | 5 | 98.6 |
 | 10 | 99.0 |
 | *Hard top k* |  |
-| 2 | 86.3 |
-| 3 | 78.3 |
+| 2 | 74.7 |
+| 3 | 54.3 |
 | *mAP* | 84.4 |
 
 ## Setup/Installation Instructions

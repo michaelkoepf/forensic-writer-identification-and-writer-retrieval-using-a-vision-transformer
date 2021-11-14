@@ -26,8 +26,8 @@ We offer the following predefined splits:
 | `cvl-1-1-test_retrieval-based-subset_with-enrollment_pages.csv`      | Contains only the test set of `cvl-1-1_with-enrollment_pages.csv` with exclusion of writer id 431. The exclusion is necessary for retrieval-based evaluation, since this writer has only one document in the test set. | 1 |   
 | `cvl-1-1_without-enrollment_pages.csv`      | Original split of the `CVL` database. Page with id 2 of each writer in the training set is used for validation. | 2[\*\*] |   
 | `icdar-2013_pages.csv`      | `ICDAR 2013` dataset. The pages used for validation are interleaved, with page 1, 3, 2, 4, 1, 3, 2, 4, ... being used for validation. This ensures a balanced validation set of english and greek texts, respectively.  | 3 |   
-| `icdar-2013-test_greek-subset_pages.csv`      | Contains only the test set with greek pages (pages with id 3 and 4) of `icdar-2013_pages.csv`.  | 1 |   
-| `icdar-2013-test_latin-subset_pages.csv`      | Contains only the test set with latin pages (pages with id 1 and 2) of `icdar-2013_pages.csv`.  | 1 |   
+| `icdar-2013-test_greek-subset_pages.csv`      | Contains only the test set with pages written in greek script (pages with id 3 and 4) of `icdar-2013_pages.csv`. This subset is also referred to as "Greek language subset" | 1 |   
+| `icdar-2013-test_latin-subset_pages.csv`      | Contains only the test set with pages written in latin script (pages with id 1 and 2) of `icdar-2013_pages.csv`. This subset is also referred to as "English language subset".  | 1 |   
 | `write_pages.csv`[\*\*\*]      | `WRITE` dataset with all pages being used for testing. | 1 |   
 | `write_script-subset_pages.csv`[\*\*\*]      | Contains only regions with handwriting written in script. Writer with id 10 was excluded, since there is only image for this writer. | 1 |   
 | `write_block-letters-block-capitals-subset_pages.csv`[\*\*\*]      | Contains only regions with handwriting written in block letters or block capitals. Writer with id 4 and 9 were excluded, since they have only have one image each. | 1 |   
