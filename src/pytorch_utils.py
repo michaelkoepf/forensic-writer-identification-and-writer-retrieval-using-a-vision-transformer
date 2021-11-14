@@ -295,8 +295,8 @@ class ClassificationTester:
 class RetrievalTester:
     """Class for testing a dataset as a retrieval task
 
-    Given a page of a writer divided into several image patches, the activations of
-    the second last and last layer of the network are used to form a global feature vector
+    Given a page of a writer divided into several image patches, the output of
+    the transformer encoder and the MLP head of the network are used to form a global feature vector
     for the entire page by averaging them (similar to [1]).
 
     Besides the soft and hard criterion, also the mAP (mean average precision) is calculated.
@@ -311,8 +311,8 @@ class RetrievalTester:
     def __init__(self, feature_vector_dims, test_set_path, model):
         """
         Args:
-            feature_vector_dims (tuple): Dimension of the second last and
-            last layer of the network given as tuple (dim second last, dim last)
+            feature_vector_dims (tuple): Dimension of the output of the transformer encoder and
+            the MLP head of the network given as tuple (dim transformer encoder, dim mlp head)
             test_set_path: Path to the preprocessed dataset to be tested
             model: Model to be used already set into evaluation mode and with
             loaded parameters (trained weights)
@@ -323,8 +323,8 @@ class RetrievalTester:
 
         self.calculated_feature_vectors = False
         self.labels = None
-        self.global_feature_vectors_second_last_layer = None
-        self.global_feature_vectors_last_layer = None
+        self.global_feature_vectors_transformer_encoder = None
+        self.global_feature_vectors_mlp_head = None
         self.num_rel_docs_per_label = None
 
     @torch.no_grad()
@@ -358,26 +358,26 @@ class RetrievalTester:
             metrics = ["cosine"]
 
         if not self.calculated_feature_vectors:
-            self.labels, self.global_feature_vectors_second_last_layer, self.global_feature_vectors_last_layer = \
+            self.labels, self.global_feature_vectors_transformer_encoder, self.global_feature_vectors_mlp_head = \
                 self._calculate_feature_vectors(device, batch_size, num_workers)
 
             _, inv_idx, num_rel_docs_inv = self.labels.unique(return_inverse=True, return_counts=True)
             self.num_rel_docs_per_label = (num_rel_docs_inv[inv_idx] - 1)
             self.calculated_feature_vectors = True
 
-        assert self.labels is not None and self.global_feature_vectors_second_last_layer is not None and \
-               self.global_feature_vectors_last_layer is not None and self.num_rel_docs_per_label is not None, \
+        assert self.labels is not None and self.global_feature_vectors_transformer_encoder is not None and \
+               self.global_feature_vectors_mlp_head is not None and self.num_rel_docs_per_label is not None, \
             "Feature vectors were not calculated"
 
         assert torch.any(
             self.num_rel_docs_per_label > 0), "Cannot perform retrieval-based evaluation: There is a writer with " \
                                               "only one document in the test set"
 
-        return {"second_last_layer": self._evaluate(self.global_feature_vectors_second_last_layer, self.labels,
-                                                    self.num_rel_docs_per_label, soft_top_k, hard_top_k, metrics),
-                "last_layer": self._evaluate(self.global_feature_vectors_last_layer, self.labels,
-                                             self.num_rel_docs_per_label,
-                                             soft_top_k, hard_top_k, metrics)}
+        return {"transformer_encoder": self._evaluate(self.global_feature_vectors_transformer_encoder, self.labels,
+                                                      self.num_rel_docs_per_label, soft_top_k, hard_top_k, metrics),
+                "mlp_head": self._evaluate(self.global_feature_vectors_mlp_head, self.labels,
+                                           self.num_rel_docs_per_label,
+                                           soft_top_k, hard_top_k, metrics)}
 
     @torch.no_grad()
     def _calculate_feature_vectors(self, device, batch_size, num_workers):
@@ -385,12 +385,12 @@ class RetrievalTester:
         set_all_seeds(seed)
 
         results_intermediate_layers = {}
-        hook_second_last_layer = self.model.to_latent.register_forward_hook(
+        hook_transformer_encoder = self.model.to_latent.register_forward_hook(
             self._get_intermediate_layer(results_intermediate_layers, "to_latent"))
 
-        global_feature_vectors_second_last_layer = torch.zeros((len(self.page_paths), self.feature_vector_dims[0])).to(
+        global_feature_vectors_transformer_encoder = torch.zeros((len(self.page_paths), self.feature_vector_dims[0])).to(
             device=device)
-        global_feature_vectors_last_layer = torch.zeros((len(self.page_paths), self.feature_vector_dims[1])).to(
+        global_feature_vectors_mlp_head = torch.zeros((len(self.page_paths), self.feature_vector_dims[1])).to(
             device=device)
         labels = torch.zeros((len(self.page_paths),), dtype=torch.int)
 
@@ -406,16 +406,16 @@ class RetrievalTester:
                 data = data.to(device=device)
                 output = self.model(data)
 
-                global_feature_vectors_second_last_layer[idx] += results_intermediate_layers["to_latent"].mean(dim=0)
-                global_feature_vectors_last_layer[idx] += output.mean(dim=0)
+                global_feature_vectors_transformer_encoder[idx] += results_intermediate_layers["to_latent"].mean(dim=0)
+                global_feature_vectors_mlp_head[idx] += output.mean(dim=0)
 
-            global_feature_vectors_second_last_layer[idx] /= num_batches
-            global_feature_vectors_last_layer[idx] /= num_batches
+            global_feature_vectors_transformer_encoder[idx] /= num_batches
+            global_feature_vectors_mlp_head[idx] /= num_batches
             labels[idx] = float(label[0])
 
-        hook_second_last_layer.remove()
+        hook_transformer_encoder.remove()
 
-        return labels, global_feature_vectors_second_last_layer, global_feature_vectors_last_layer
+        return labels, global_feature_vectors_transformer_encoder, global_feature_vectors_mlp_head
 
     @staticmethod
     def _get_intermediate_layer(activations, key):
@@ -444,11 +444,11 @@ class RetrievalTester:
 
             soft_top_k_result = {}
             for k in soft_top_k:
-                soft_top_k_result[k] = (labels[ranking[:k]] == labels).float().max(dim=0).values.mean().item()
+                soft_top_k_result[k] = (labels[ranking[:k]] == labels).any(dim=0).float().mean().item()
 
             hard_top_k_result = {}
             for k in hard_top_k:
-                hard_top_k_result[k] = (labels[ranking[:k]] == labels).float().mean().item()
+                hard_top_k_result[k] = (labels[ranking[:k]] == labels).all(dim=0).float().mean().item()
 
             result[m]["soft_top_k"] = soft_top_k_result
             result[m]["hard_top_k"] = hard_top_k_result
