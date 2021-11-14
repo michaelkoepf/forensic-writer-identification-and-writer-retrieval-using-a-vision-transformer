@@ -309,7 +309,8 @@ defaults = {
             os.path.join(this_file_dir, os.pardir, "dataset_splits", "cvl-1-1_with-enrollment_pages.csv"),
             SIFTPatchExtractor(sigma=3.75),
             "cvl-1-1_with-enrollment_pages",
-            pipeline_items=[OtsuBinarization()]
+            pipeline_items=[OtsuBinarization()],
+            conditional_filter=lambda img: np.mean(img) == 255
         ), root_dir=os.path.join(os.curdir, "data")),
     # for retrieval-based evaluation -- writer with id 431 is excluded, since this writer has only one document in the
     # test set
@@ -320,7 +321,8 @@ defaults = {
                          "cvl-1-1-test_retrieval-based-subset_with-enrollment_pages.csv"),
             SIFTPatchExtractor(sigma=3.75),
             "cvl-1-1-test_retrieval-based-subset_with-enrollment_pages",
-            pipeline_items=[OtsuBinarization()]
+            pipeline_items=[OtsuBinarization()],
+            conditional_filter=lambda img: np.mean(img) == 255
         ), root_dir=os.path.join(os.curdir, "data")),
     "cvl-1-1_without-enrollment_pages": CVLCroppedDataset(
         27,
